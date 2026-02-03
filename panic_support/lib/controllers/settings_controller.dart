@@ -68,10 +68,6 @@ class SettingsController extends ChangeNotifier {
     return update(_settings.copyWith(reflectionEnabled: enabled));
   }
 
-  Future<void> updateEmergencyContact(EmergencyContact? contact) {
-    return update(_settings.copyWith(emergencyContact: contact));
-  }
-
   Future<void> updateEmergencyNumbers({
     required String? localEmergency,
     required String? crisisLine,
@@ -87,6 +83,23 @@ class SettingsController extends ChangeNotifier {
       crisisHotlineNumber: clean(crisisLine),
       crisisHotlineLabel: clean(crisisLabel),
     ));
+  }
+
+  Future<void> addEmergencyContact(EmergencyContact contact) {
+    final updated = [..._settings.emergencyContacts, contact];
+    return update(_settings.copyWith(emergencyContacts: updated));
+  }
+
+  Future<void> removeEmergencyContactAt(int index) {
+    final updated = [..._settings.emergencyContacts];
+    if (index >= 0 && index < updated.length) {
+      updated.removeAt(index);
+    }
+    return update(_settings.copyWith(emergencyContacts: updated));
+  }
+
+  Future<void> clearEmergencyContacts() {
+    return update(_settings.copyWith(emergencyContacts: []));
   }
 
   Future<void> updateThemePreference(ThemePreference preference) {

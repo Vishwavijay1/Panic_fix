@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'night_sky.dart';
+
 class AppBackground extends StatelessWidget {
   final Widget child;
 
@@ -23,7 +25,12 @@ class AppBackground extends StatelessWidget {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: child,
+      child: Stack(
+        children: [
+          if (isDark) const Positioned.fill(child: NightSky()),
+          child,
+        ],
+      ),
     );
   }
 }

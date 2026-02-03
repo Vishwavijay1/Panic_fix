@@ -37,7 +37,7 @@ class AppSettings {
   final int earlyWarningSeconds;
   final bool reflectionEnabled;
   final List<String> customGroundingStatements;
-  final EmergencyContact? emergencyContact;
+  final List<EmergencyContact> emergencyContacts;
   final String? localEmergencyNumber;
   final String? crisisHotlineNumber;
   final String? crisisHotlineLabel;
@@ -52,7 +52,7 @@ class AppSettings {
     required this.earlyWarningSeconds,
     required this.reflectionEnabled,
     required this.customGroundingStatements,
-    required this.emergencyContact,
+    required this.emergencyContacts,
     required this.localEmergencyNumber,
     required this.crisisHotlineNumber,
     required this.crisisHotlineLabel,
@@ -68,7 +68,7 @@ class AppSettings {
     int? earlyWarningSeconds,
     bool? reflectionEnabled,
     List<String>? customGroundingStatements,
-    EmergencyContact? emergencyContact,
+    List<EmergencyContact>? emergencyContacts,
     String? localEmergencyNumber,
     String? crisisHotlineNumber,
     String? crisisHotlineLabel,
@@ -84,7 +84,7 @@ class AppSettings {
       reflectionEnabled: reflectionEnabled ?? this.reflectionEnabled,
       customGroundingStatements:
           customGroundingStatements ?? this.customGroundingStatements,
-      emergencyContact: emergencyContact ?? this.emergencyContact,
+      emergencyContacts: emergencyContacts ?? this.emergencyContacts,
       localEmergencyNumber: localEmergencyNumber ?? this.localEmergencyNumber,
       crisisHotlineNumber: crisisHotlineNumber ?? this.crisisHotlineNumber,
       crisisHotlineLabel: crisisHotlineLabel ?? this.crisisHotlineLabel,
@@ -101,7 +101,8 @@ class AppSettings {
         'earlyWarningSeconds': earlyWarningSeconds,
         'reflectionEnabled': reflectionEnabled,
         'customGroundingStatements': customGroundingStatements,
-        'emergencyContact': emergencyContact?.toMap(),
+        'emergencyContacts':
+            emergencyContacts.map((contact) => contact.toMap()).toList(),
         'localEmergencyNumber': localEmergencyNumber,
         'crisisHotlineNumber': crisisHotlineNumber,
         'crisisHotlineLabel': crisisHotlineLabel,
@@ -115,13 +116,24 @@ class AppSettings {
     final customList = rawCustom is List
         ? rawCustom.whereType<String>().map((e) => e.trim()).toList()
         : <String>[];
-    final emergencyMap = map['emergencyContact'];
-
-    EmergencyContact? contact;
-    if (emergencyMap is Map<String, dynamic>) {
-      contact = EmergencyContact.fromMap(emergencyMap);
-      if (contact.name.isEmpty && contact.phone.isEmpty) {
-        contact = null;
+    final emergencyList = <EmergencyContact>[];
+    final emergencyContactsRaw = map['emergencyContacts'];
+    if (emergencyContactsRaw is List) {
+      for (final entry in emergencyContactsRaw) {
+        if (entry is Map<String, dynamic>) {
+          final contact = EmergencyContact.fromMap(entry);
+          if (contact.name.isNotEmpty || contact.phone.isNotEmpty) {
+            emergencyList.add(contact);
+          }
+        }
+      }
+    } else {
+      final emergencyMap = map['emergencyContact'];
+      if (emergencyMap is Map<String, dynamic>) {
+        final contact = EmergencyContact.fromMap(emergencyMap);
+        if (contact.name.isNotEmpty || contact.phone.isNotEmpty) {
+          emergencyList.add(contact);
+        }
       }
     }
 
@@ -140,7 +152,7 @@ class AppSettings {
       earlyWarningSeconds: (map['earlyWarningSeconds'] as num?)?.toInt() ?? 60,
       reflectionEnabled: map['reflectionEnabled'] as bool? ?? false,
       customGroundingStatements: customList,
-      emergencyContact: contact,
+      emergencyContacts: emergencyList,
       localEmergencyNumber: map['localEmergencyNumber'] as String?,
       crisisHotlineNumber: map['crisisHotlineNumber'] as String?,
       crisisHotlineLabel: map['crisisHotlineLabel'] as String?,
@@ -163,7 +175,7 @@ class AppSettings {
       earlyWarningSeconds: 60,
       reflectionEnabled: false,
       customGroundingStatements: [],
-      emergencyContact: null,
+      emergencyContacts: [],
       localEmergencyNumber: '112',
       crisisHotlineNumber: '+91 9152987821',
       crisisHotlineLabel: 'iCall Helpline Service',

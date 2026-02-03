@@ -31,8 +31,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.didChangeDependencies();
     if (_initialized) return;
     final settings = SettingsScope.of(context).settings;
-    _contactNameController.text = settings.emergencyContact?.name ?? '';
-    _contactPhoneController.text = settings.emergencyContact?.phone ?? '';
     _emergencyNumberController.text = settings.localEmergencyNumber ?? '';
     _crisisNumberController.text = settings.crisisHotlineNumber ?? '';
     _crisisLabelController.text = settings.crisisHotlineLabel ?? '';
@@ -41,6 +39,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _pauseValue = settings.pauseSeconds.toDouble();
     _earlyWarningValue = settings.earlyWarningSeconds.toDouble();
     _initialized = true;
+  }
+
+  bool _isPhoneValid(String phone) {
+    final pattern = RegExp(r'^[0-9+()\\-\\s]+\$');
+    if (!pattern.hasMatch(phone)) return false;
+    final digitsOnly = phone.replaceAll(RegExp(r'\\D'), '');
+    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _addContact(SettingsController controller) {
+    final name = _contactNameController.text.trim();
+    final phone = _contactPhoneController.text.trim();
+
+    if (phone.isEmpty) {
+      _showError('Enter a phone number.');
+      return;
+    }
+    if (!_isPhoneValid(phone)) {
+      _showError('Enter a valid phone number.');
+      return;
+    }
+
+    controller.addEmergencyContact(
+      EmergencyContact(name: name, phone: phone),
+    );
+    _contactNameController.clear();
+    _contactPhoneController.clear();
   }
 
   @override
@@ -193,55 +224,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-            const SectionHeader('Emergency Contact'),
-            TextField(
-              controller: _contactNameController,
-              decoration: const InputDecoration(
-                labelText: 'Contact name',
-                border: OutlineInputBorder(),
-              ),
+          const SectionHeader('Emergency Contacts'),
+          TextField(
+            controller: _contactNameController,
+            decoration: const InputDecoration(
+              labelText: 'Contact name',
+              border: OutlineInputBorder(),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _contactPhoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Contact phone',
-                border: OutlineInputBorder(),
-              ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _contactPhoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Contact phone',
+              border: OutlineInputBorder(),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final name = _contactNameController.text.trim();
-                      final phone = _contactPhoneController.text.trim();
-                      if (name.isEmpty && phone.isEmpty) {
-                        controller.updateEmergencyContact(null);
-                      } else {
-                        controller.updateEmergencyContact(
-                          EmergencyContact(name: name, phone: phone),
-                        );
-                      }
-                    },
-                    child: const Text('Save contact'),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _addContact(controller),
+              child: const Text('Add contact'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (settings.emergencyContacts.isEmpty)
+            const Text('No emergency contacts added yet.'),
+          if (settings.emergencyContacts.isNotEmpty)
+            ...settings.emergencyContacts.asMap().entries.map(
+                  (entry) => ListTile(
+                    title: Text(
+                      entry.value.name.isNotEmpty
+                          ? entry.value.name
+                          : 'Emergency contact',
+                    ),
+                    subtitle: Text(entry.value.phone),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () =>
+                          controller.removeEmergencyContactAt(entry.key),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      _contactNameController.clear();
-                      _contactPhoneController.clear();
-                      controller.updateEmergencyContact(null);
-                    },
-                    child: const Text('Clear'),
-                  ),
-                ),
-              ],
-            ),
             const SectionHeader('Crisis Support'),
             Text(
               'Set local numbers so the crisis screen can open the right number.',

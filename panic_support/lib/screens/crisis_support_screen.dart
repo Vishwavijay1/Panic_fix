@@ -27,7 +27,7 @@ class CrisisSupportScreen extends StatelessWidget {
     final emergencyNumber = settings.localEmergencyNumber?.trim();
     final crisisNumber = settings.crisisHotlineNumber?.trim();
     final crisisLabel = settings.crisisHotlineLabel?.trim();
-    final contact = settings.emergencyContact;
+    final contacts = settings.emergencyContacts;
 
     return AppBackground(
       child: Scaffold(
@@ -70,15 +70,17 @@ class CrisisSupportScreen extends StatelessWidget {
               else
                 const Text('Crisis line number not set.'),
               const SizedBox(height: 12),
-              if (contact != null && contact.phone.trim().isNotEmpty)
-                TextButton(
+            if (contacts.isNotEmpty)
+              ...contacts.map(
+                (contact) => TextButton(
                   onPressed: () => _callNumber(context, contact.phone),
                   child: Text(
                     'Call ${contact.name.isNotEmpty ? contact.name : 'contact'}',
                   ),
-                )
-              else
-                const Text('Emergency contact not set.'),
+                ),
+              )
+            else
+              const Text('Emergency contacts not set.'),
               const Spacer(),
               Text(
                 'This app is not a replacement for professional care.',
