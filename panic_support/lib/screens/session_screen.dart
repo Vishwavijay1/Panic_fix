@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../app.dart';
 import '../data/content_repository.dart';
 import '../models/panic_phase.dart';
 import '../theme/panic_theme.dart';
-import '../widgets/audio_toggle.dart';
-import '../widgets/breathing_orb.dart';
+import '../widgets/audio_control.dart';
+import '../widgets/breathing_cycle.dart';
 import '../widgets/elapsed_time_badge.dart';
 import '../widgets/grounding_card.dart';
 import '../widgets/hold_to_exit.dart';
@@ -48,7 +48,7 @@ class _SessionScreenState extends State<SessionScreen> {
     _reassuranceLines = ContentRepository.reassuranceLines;
     _config = SessionConfig.forMode(widget.mode, settings.earlyWarningSeconds);
     _startTimers();
-    _syncAudio(settings.audioEnabled);
+    _syncAudio(settings.audioEnabled, settings.audioVolume);
     _initialized = true;
   }
 
@@ -69,11 +69,15 @@ class _SessionScreenState extends State<SessionScreen> {
     });
   }
 
-  Future<void> _syncAudio(bool enabled) async {
+  Future<void> _syncAudio(bool enabled, double volume) async {
     if (enabled) {
       _audioPlayer ??= AudioPlayer();
-      await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer!.play(AssetSource('audio/soft_tone.wav'));
+      await _audioPlayer!.setLoopMode(LoopMode.one);
+      await _audioPlayer!.setVolume(volume.clamp(0.0, 1.0));
+      await _audioPlayer!.setAudioSource(
+        AudioSource.asset('assets/audio/soft_tone.wav'),
+      );
+      await _audioPlayer!.play();
     } else {
       await _audioPlayer?.stop();
     }
@@ -83,7 +87,13 @@ class _SessionScreenState extends State<SessionScreen> {
     final controller = SettingsScope.of(context);
     final next = !controller.settings.audioEnabled;
     await controller.updateAudio(next);
-    await _syncAudio(next);
+    await _syncAudio(next, controller.settings.audioVolume);
+  }
+
+  Future<void> _updateVolume(double value) async {
+    final controller = SettingsScope.of(context);
+    await controller.updateAudioVolume(value);
+    await _audioPlayer?.setVolume(value.clamp(0.0, 1.0));
   }
 
   void _nextGroundingStep() {
@@ -94,10 +104,15 @@ class _SessionScreenState extends State<SessionScreen> {
     }
   }
 
-  void _restartGrounding() {
+  void _returnToBreathing() {
     setState(() {
       _groundingIndex = 0;
-      _phase = SessionPhase.grounding;
+      _phase = SessionPhase.breathing;
+    });
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(_config.breathingDuration, () {
+      if (!mounted) return;
+      setState(() => _phase = SessionPhase.grounding);
     });
   }
 
@@ -143,9 +158,11 @@ class _SessionScreenState extends State<SessionScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElapsedTimeBadge(elapsed: _elapsed),
-                      AudioToggle(
+                      AudioControl(
                         enabled: SettingsScope.of(context).settings.audioEnabled,
+                        volume: SettingsScope.of(context).settings.audioVolume,
                         onToggle: _toggleAudio,
+                        onVolumeChanged: _updateVolume,
                       ),
                     ],
                   ),
@@ -189,7 +206,7 @@ class _SessionScreenState extends State<SessionScreen> {
               : 'Next',
         );
       case SessionPhase.stabilize:
-        return _StabilizePhase(onContinue: _restartGrounding);
+        return _StabilizePhase(onContinue: _returnToBreathing);
     }
   }
 }
@@ -215,7 +232,7 @@ class SessionConfig {
         );
       case SessionMode.panic:
         return const SessionConfig(
-          breathingDuration: Duration(seconds: 90),
+          breathingDuration: Duration(seconds: 45),
           groundingCount: 6,
           breathingLabel: 'Let the exhale be longer',
         );
@@ -240,7 +257,7 @@ class _BreathingPhase extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        BreathingOrb(
+        BreathingCycle(
           inhale: Duration(seconds: settings.inhaleSeconds),
           exhale: Duration(seconds: settings.exhaleSeconds),
           pause: Duration(seconds: settings.pauseSeconds),
@@ -282,7 +299,7 @@ class _StabilizePhase extends StatelessWidget {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: onContinue,
-            child: const Text('Continue grounding'),
+            child: const Text('Keep grounding'),
           ),
         ),
       ],

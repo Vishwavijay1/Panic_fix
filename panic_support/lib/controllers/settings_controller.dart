@@ -54,6 +54,11 @@ class SettingsController extends ChangeNotifier {
     return update(_settings.copyWith(audioEnabled: enabled));
   }
 
+  Future<void> updateAudioVolume(double volume) {
+    final clamped = volume.clamp(0.0, 1.0).toDouble();
+    return update(_settings.copyWith(audioVolume: clamped));
+  }
+
   Future<void> updateEarlyWarning({
     required bool enabled,
     required int seconds,

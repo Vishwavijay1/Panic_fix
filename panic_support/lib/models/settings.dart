@@ -33,6 +33,7 @@ class AppSettings {
   final int exhaleSeconds;
   final int pauseSeconds;
   final bool audioEnabled;
+  final double audioVolume;
   final bool earlyWarningEnabled;
   final int earlyWarningSeconds;
   final bool reflectionEnabled;
@@ -48,6 +49,7 @@ class AppSettings {
     required this.exhaleSeconds,
     required this.pauseSeconds,
     required this.audioEnabled,
+    required this.audioVolume,
     required this.earlyWarningEnabled,
     required this.earlyWarningSeconds,
     required this.reflectionEnabled,
@@ -64,6 +66,7 @@ class AppSettings {
     int? exhaleSeconds,
     int? pauseSeconds,
     bool? audioEnabled,
+    double? audioVolume,
     bool? earlyWarningEnabled,
     int? earlyWarningSeconds,
     bool? reflectionEnabled,
@@ -79,6 +82,7 @@ class AppSettings {
       exhaleSeconds: exhaleSeconds ?? this.exhaleSeconds,
       pauseSeconds: pauseSeconds ?? this.pauseSeconds,
       audioEnabled: audioEnabled ?? this.audioEnabled,
+      audioVolume: audioVolume ?? this.audioVolume,
       earlyWarningEnabled: earlyWarningEnabled ?? this.earlyWarningEnabled,
       earlyWarningSeconds: earlyWarningSeconds ?? this.earlyWarningSeconds,
       reflectionEnabled: reflectionEnabled ?? this.reflectionEnabled,
@@ -97,6 +101,7 @@ class AppSettings {
         'exhaleSeconds': exhaleSeconds,
         'pauseSeconds': pauseSeconds,
         'audioEnabled': audioEnabled,
+        'audioVolume': audioVolume,
         'earlyWarningEnabled': earlyWarningEnabled,
         'earlyWarningSeconds': earlyWarningSeconds,
         'reflectionEnabled': reflectionEnabled,
@@ -148,6 +153,7 @@ class AppSettings {
       exhaleSeconds: (map['exhaleSeconds'] as num?)?.toInt() ?? 6,
       pauseSeconds: (map['pauseSeconds'] as num?)?.toInt() ?? 2,
       audioEnabled: map['audioEnabled'] as bool? ?? false,
+      audioVolume: (map['audioVolume'] as num?)?.toDouble() ?? 0.22,
       earlyWarningEnabled: map['earlyWarningEnabled'] as bool? ?? true,
       earlyWarningSeconds: (map['earlyWarningSeconds'] as num?)?.toInt() ?? 60,
       reflectionEnabled: map['reflectionEnabled'] as bool? ?? false,
@@ -171,6 +177,7 @@ class AppSettings {
       exhaleSeconds: 6,
       pauseSeconds: 2,
       audioEnabled: false,
+      audioVolume: 0.22,
       earlyWarningEnabled: true,
       earlyWarningSeconds: 60,
       reflectionEnabled: false,

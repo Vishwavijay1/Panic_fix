@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app.dart';
+import '../controllers/settings_controller.dart';
 import '../models/settings.dart';
 import '../widgets/app_background.dart';
 import '../widgets/section_header.dart';
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _exhaleValue = 6;
   double _pauseValue = 2;
   double _earlyWarningValue = 90;
+  double _audioVolumeValue = 0.22;
 
   @override
   void didChangeDependencies() {
@@ -38,13 +40,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _exhaleValue = settings.exhaleSeconds.toDouble();
     _pauseValue = settings.pauseSeconds.toDouble();
     _earlyWarningValue = settings.earlyWarningSeconds.toDouble();
+    _audioVolumeValue = settings.audioVolume;
     _initialized = true;
   }
 
   bool _isPhoneValid(String phone) {
-    final pattern = RegExp(r'^[0-9+()\\-\\s]+\$');
+    final pattern = RegExp(r'^[0-9+()\-\s]+$');
     if (!pattern.hasMatch(phone)) return false;
-    final digitsOnly = phone.replaceAll(RegExp(r'\\D'), '');
+    final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
     return digitsOnly.length >= 7 && digitsOnly.length <= 15;
   }
 
@@ -136,10 +139,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 pause: value.round(),
               ),
             ),
-            SwitchListTile(
-              title: const Text('Audio cues in sessions'),
-              value: settings.audioEnabled,
-              onChanged: (value) => controller.updateAudio(value),
+          SwitchListTile(
+            title: const Text('Audio cues in sessions'),
+            value: settings.audioEnabled,
+            onChanged: (value) => controller.updateAudio(value),
+          ),
+          if (settings.audioEnabled)
+            _SliderRow(
+              label: 'Audio volume',
+              value: _audioVolumeValue,
+              min: 0.0,
+              max: 1.0,
+              divisions: 20,
+              onChanged: (value) => setState(() => _audioVolumeValue = value),
+              onChangeEnd: (value) => controller.updateAudioVolume(value),
             ),
           const SectionHeader('Early Warning'),
           SwitchListTile(
@@ -333,6 +346,7 @@ class _SliderRow extends StatelessWidget {
   final double value;
   final double min;
   final double max;
+  final int? divisions;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
 
@@ -341,6 +355,7 @@ class _SliderRow extends StatelessWidget {
     required this.value,
     required this.min,
     required this.max,
+    this.divisions,
     required this.onChanged,
     required this.onChangeEnd,
   });
@@ -355,7 +370,7 @@ class _SliderRow extends StatelessWidget {
           value: value,
           min: min,
           max: max,
-          divisions: (max - min).round(),
+          divisions: divisions ?? (max - min).round(),
           label: value.round().toString(),
           onChanged: onChanged,
           onChangeEnd: onChangeEnd,
